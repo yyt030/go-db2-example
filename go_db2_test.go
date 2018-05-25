@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"testing"
+	"time"
 
 	"github.com/alexbrainman/odbc"
 	_ "github.com/alexbrainman/odbc"
@@ -98,13 +99,15 @@ func TestPrepareQuery(t *testing.T) {
 	}
 	defer rows.Close()
 
+	n := 0
 	for rows.Next() {
 		err := rows.Scan(&tabName, &tabSchema)
 		if err != nil {
 			t.Fatalf("err:%v", err)
 		}
-		log.Println(tabName, tabSchema)
+		n++
 	}
+	log.Printf("got %d records\n", n)
 
 	if err = rows.Err(); err != nil {
 		t.Fatal(err)
@@ -190,20 +193,87 @@ func TestHandleError(t *testing.T) {
 
 	rows, err := db.Query("select * from AAA")
 	if err != nil {
-		log.Println("err:", err)
+		log.Println("query err:", err)
 		if driverErr, ok := err.(*odbc.Error); ok {
 			log.Println(">>>", "db2 sqlcode:", driverErr.Diag[0].NativeError)
 		}
 	}
-
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println(r)
 		}
 	}()
+
+	defer rows.Close()
+
 	if err = rows.Err(); err != nil {
 		// handle the error here
 		log.Println(err)
 	}
 
+}
+
+func TestNullString(t *testing.T) {
+	db, _ := NewConn()
+	defer db.Close()
+
+	rows, err := db.Query("select COALESCE(name, '') from test")
+	if err != nil {
+		t.Fatalf("error:%v", err)
+	}
+	defer rows.Close()
+
+	var name sql.NullString
+	for rows.Next() {
+		_ = rows.Scan(&name)
+		if name.Valid {
+			// use s.String
+		} else {
+			// error handle
+		}
+	}
+}
+
+func TestUnknownColumn(t *testing.T) {
+	db, _ := NewConn()
+	defer db.Close()
+
+	rows, err := db.Query("select * from test where name is not null")
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	//log.Println(rows.Columns())
+	cols, err := rows.Columns()
+	if err != nil {
+		t.Fatalf("err:%v", err)
+	}
+
+	vals := make([]interface{}, len(cols))
+	for i, _ := range vals {
+		vals[i] = new(sql.RawBytes)
+	}
+
+	for rows.Next() {
+		err := rows.Scan(vals...)
+		if err != nil {
+			t.Fatalf("%v", err)
+		}
+		//log.Println(vals...)
+		//log.Println(vals[0], vals[1])
+	}
+}
+
+func TestConnectionPool(t *testing.T) {
+	db, _ := NewConn()
+	defer db.Close()
+
+	db.SetMaxIdleConns(10)
+	db.SetMaxOpenConns(20)
+
+	for i := 0; i < 100; i++ {
+		db.Query("select * from test where name is not null")
+	}
+
+	time.Sleep(time.Hour)
+	log.Println(db.Stats())
 }
