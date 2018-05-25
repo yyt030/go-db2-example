@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"log"
 	"testing"
-	"time"
 
 	"github.com/alexbrainman/odbc"
 	_ "github.com/alexbrainman/odbc"
@@ -107,7 +106,7 @@ func TestPrepareQuery(t *testing.T) {
 		}
 		n++
 	}
-	log.Printf("got %d records\n", n)
+	//log.Printf("got %d records\n", n)
 
 	if err = rows.Err(); err != nil {
 		t.Fatal(err)
@@ -125,7 +124,7 @@ func TestQuerySingleRow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err:%v", err)
 	}
-	log.Println(tabName)
+	//log.Println(tabName)
 
 	// example 2
 	stmt, err := db.Prepare("select tabname from syscat.tables where tabschema = ?")
@@ -137,7 +136,7 @@ func TestQuerySingleRow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	log.Println(tabName)
+	//log.Println(tabName)
 }
 
 func TestInsert(t *testing.T) {
@@ -268,12 +267,9 @@ func TestConnectionPool(t *testing.T) {
 	defer db.Close()
 
 	db.SetMaxIdleConns(10)
-	db.SetMaxOpenConns(20)
+	db.SetMaxOpenConns(10)
 
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 10; i++ {
 		db.Query("select * from test where name is not null")
 	}
-
-	time.Sleep(time.Hour)
-	log.Println(db.Stats())
 }
