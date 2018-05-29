@@ -114,7 +114,7 @@ ODBC驱动程序管理器是ODBC应用程序和ODBC驱动程序之间的接口�
 在运行时，应用程序提供了一个连接字符串，即DSN，该连接字符串定义了要连接的ODBC数据源，并依次定义将处理连接的ODBC驱动程序。
 unixODBC加载所请求的ODBC驱动程序并将所有ODBC API调用传递给目标驱动程序，也就是db2 odbc driver;
 流程如下：
-app ---> unixODBC ---> db2 ODBC driver
+app ---> unixODBC ---> db2 ODBC driver ---> db2 Server
 
 对于DB2 ODBC驱动程序来说，ODBC应用程序需要提供一个与DB2 ODBC驱动程序数据源同名的ODBC数据源。
 unixODBC加载相应的数据源驱动程序(DB2 ODBC driver)，并将数据源配置信息传递给加载的DB2 ODBC driver,DB2 ODBC驱动程序检查它的数据源的配置文件，判断它的名称与它传递的名称相同;

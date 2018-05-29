@@ -6,12 +6,11 @@ import (
 	"testing"
 
 	"github.com/alexbrainman/odbc"
-	_ "github.com/alexbrainman/odbc"
 )
 
 func NewConn() (*sql.DB, error) {
 	//db, err := sql.Open("odbc", `Driver={DB2};DSN=DB2_SAMPLE`)
-	db, err := sql.Open("odbc", `DSN=DB2_SAMPLE;uid=db2inst1;pwd=db2inst1`)
+	db, err := sql.Open("odbc", `DSN=DB2_SAMPLE;uid=db2inst1;pwd=123456`)
 	if err != nil {
 		return nil, err
 	}
@@ -30,32 +29,6 @@ func TestNewConnect(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ping error: %v", err)
 	}
-
-	db2, err := sql.Open("odbc", `DSN=AAA;uid=db2inst1;pwd=db2inst1`)
-	if err != nil {
-		t.Fatalf("err:%v", err)
-	}
-	defer db2.Close()
-
-	err = db.Ping()
-	if err != nil {
-		t.Fatalf("ping error: %v", err)
-	}
-
-}
-
-func TestNewConnect2(t *testing.T) {
-	db2, err := sql.Open("odbc", `DSN=DB2_SAMPLE;uid=db2inst1;pwd=db2inst1`)
-	if err != nil {
-		t.Fatalf("err:%v", err)
-	}
-	defer db2.Close()
-
-	err = db2.Ping()
-	if err != nil {
-		t.Fatalf("ping error: %v", err)
-	}
-
 }
 
 func TestQuery(t *testing.T) {
@@ -272,4 +245,26 @@ func TestConnectionPool(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		db.Query("select * from test where name is not null")
 	}
+}
+
+func TestNullString2(t *testing.T) {
+	db, _ := NewConn()
+	defer db.Close()
+
+	rows, err := db.Query("select name from test2")
+	if err != nil {
+		t.Fatalf("error:%v", err)
+	}
+	defer rows.Close()
+
+	var name sql.RawBytes
+	for rows.Next() {
+		err := rows.Scan(&name)
+		if err != nil {
+			panic(err)
+		}
+		log.Printf("name:%v, %s\n", name, name)
+
+	}
+
 }
